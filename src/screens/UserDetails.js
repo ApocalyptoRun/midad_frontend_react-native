@@ -1,24 +1,31 @@
 import {
+  Alert,
   SafeAreaView,
   StyleSheet,
+  Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import React, {useContext, useState} from "react";
+import React, {useContext, useEffect, useState} from "react";
 import {Avatar, TextInput} from "react-native-paper";
 import {COLORS, SIZES} from "../constants/themes";
-import images from "../constants/images";
 import {launchImageLibrary} from "react-native-image-picker";
 import Button from "../components/Button.js";
 import {BASE_URL} from "../constants/config.js";
 import {AuthContext} from "../context/AuthContext.js";
+import SimpleLineIcons from "react-native-vector-icons/SimpleLineIcons";
 
 const UserDetails = ({navigation}) => {
   const [firstName, setFirstName] = useState("");
   const [image, setImage] = useState("");
-  const {userToken, isFirstAuth, setIsFirstAuth} = useContext(AuthContext);
+  const {userToken} = useContext(AuthContext);
 
   const saveDetails = async () => {
+    if (!firstName) {
+      Alert.alert("Firstname is required !");
+      return;
+    }
+
     try {
       const formData = new FormData();
       formData.append("firstName", firstName);
@@ -37,7 +44,7 @@ const UserDetails = ({navigation}) => {
       });
 
       const contentType = response.headers.get("Content-Type");
-      
+
       let responseData;
 
       if (contentType && contentType.includes("application/json")) {
@@ -49,7 +56,8 @@ const UserDetails = ({navigation}) => {
       }
 
       if (response.ok) {
-        setIsFirstAuth(!isFirstAuth);
+        // setIsFirstAuth(!isFirstAuth);
+        navigation.navigate("Home");
       } else {
         console.log(`Error: ${responseData}`);
       }
@@ -81,40 +89,124 @@ const UserDetails = ({navigation}) => {
   return (
     <SafeAreaView>
       <View style={styles.container}>
+        <View>
+          <Text style={{fontSize: 20, color: COLORS.black}}>
+            Set up your profile
+          </Text>
+          <Text style={{color: COLORS.black, paddingRight: 16}}>
+            Profiles are visible to peaple you message, contact, and groups.
+          </Text>
+        </View>
+
         <View
           style={{
-            flexDirection: "row",
-            justifyContent: "center",
+            flexDirection: "column",
+            alignItems: "center",
+            marginTop: 24,
+            marginBottom: 24,
           }}>
-          <TouchableOpacity onPress={pickImage}>
-            <Avatar.Image
-              size={96}
-              source={image ? {uri: image} : images.cameraPlus}
-            />
-          </TouchableOpacity>
+          <View>
+            <TouchableOpacity onPress={pickImage}>
+              <View style={styles.photoProfile}>
+                <View style={styles.female}>
+                  {image ? (
+                    <Avatar.Image
+                      size={100}
+                      source={{uri: image}}
+                      style={styles.avatar}
+                    />
+                  ) : (
+                    <SimpleLineIcons
+                      name="user-female"
+                      size={50}
+                      color="black"
+                    />
+                  )}
+                </View>
+                <View style={styles.cameraContainer}>
+                  <View style={styles.camera}>
+                    <SimpleLineIcons name="camera" size={20} color="black" />
+                  </View>
+                </View>
+              </View>
+            </TouchableOpacity>
+          </View>
+          <Text style={{color: "black", marginTop: 8}}>{firstName}</Text>
         </View>
 
         <TextInput
-          label="Firstname"
+          label="Firstname (required)"
           mode="outlined"
           onChangeText={text => setFirstName(text)}
           value={firstName}
         />
 
-        <Button title="Save" onPress={saveDetails} style={{marginTop: 24}} />
+        <Button title="Next" onPress={saveDetails} style={{marginTop: 24}} />
       </View>
     </SafeAreaView>
   );
 };
 
+export default UserDetails;
+
 const styles = StyleSheet.create({
   container: {
     height: SIZES.height,
     width: SIZES.width,
-    justifyContent: "center",
     paddingHorizontal: 12,
     backgroundColor: COLORS.white,
+    padding: 34,
+  },
+  photoProfile: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  female: {
+    backgroundColor: "#FFFACD",
+    width: 100,
+    height: 100,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 50,
+
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  avatar: {
+    borderRadius: 50,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  camera: {
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "white",
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignSelf: "flex-end",
+
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    position: "relative",
+    zIndex: 1,
+  },
+  cameraContainer: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
   },
 });
-
-export default UserDetails;

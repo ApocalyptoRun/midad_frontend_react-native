@@ -1,24 +1,41 @@
 import {
   Alert,
   Image,
+  Keyboard,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import React, {useContext, useEffect, useState} from "react";
+import React, {useContext, useEffect, useRef, useState} from "react";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {COLORS, FONTS, SIZES} from "../constants/themes";
-import images from "../constants/images";
 import {OtpInput} from "react-native-otp-entry";
+import images from "../constants/images";
 import Button from "../components/Button";
 import axios from "axios";
 import {AuthContext} from "../context/AuthContext";
 import {BASE_URL} from "../constants/config";
+import {getHash, startOtpListener} from "react-native-otp-verify";
 
 const OTPVerification = () => {
-  const [otp, setOtp] = useState(undefined);
+  const [otp, setOtp] = useState("");
   const {login} = useContext(AuthContext);
+  const otpInputRef = useRef(null);
+
+  useEffect(() => {
+    getHash()
+      .then(hash => {console.log(hash)})
+      .catch(console.log);
+
+    startOtpListener(message => {
+      Keyboard.dismiss();
+      const match = /(\d{4})/g.exec(message);
+      const otp = match ? match[1] : null;
+      setOtp(otp);
+      setOtpValue(otp);
+    });
+  }, []);
 
   const sendOTP = () => {
     const postData = {
@@ -28,7 +45,7 @@ const OTPVerification = () => {
     axios
       .post(`${BASE_URL}/auth/verifyOTP`, postData)
       .then(response => {
-        console.log(response.data);
+        console.log(response?.data);
 
         login();
       })
@@ -43,6 +60,12 @@ const OTPVerification = () => {
   };
 
   const resendCode = () => {};
+
+  const setOtpValue = value => {
+    if (value !== null) {
+      otpInputRef.current?.setValue(value);
+    }
+  };
 
   return (
     <SafeAreaView style={{flex: 1, backgroundColor: COLORS.white}}>
@@ -75,11 +98,13 @@ const OTPVerification = () => {
             width: SIZES.width - 72,
           }}>
           <OtpInput
+            ref={otpInputRef}
             numberOfDigits={4}
             focusColor="#4E73DE"
             focusStickBlinkingDuration={400}
-            onTextChange={text => setOtp(text)}
-            onFilled={text => setOtp(text)}
+            onFilled={() => sendOTP()}
+            // onFilled={(text) => setOtp(text)}
+            // onTextChange={(text) => setOtp(text)}
             theme={{
               pinCodeContainerStyle: {
                 backgroundColor: COLORS.white,
@@ -88,8 +113,8 @@ const OTPVerification = () => {
                 borderRadius: 12,
               },
               pinCodeTextStyle: {
-                color: COLORS.black
-              }
+                color: COLORS.black,
+              },
             }}
           />
         </View>
@@ -105,7 +130,7 @@ const OTPVerification = () => {
           </TouchableOpacity>
         </TouchableOpacity>
 
-        <Button title="OKEY" style={{marginVertical: 25}} onPress={sendOTP} />
+        {/* <Button title="OKEY" style={{ marginVertical: 25 }} onPress={sendOTP} /> */}
       </View>
     </SafeAreaView>
   );

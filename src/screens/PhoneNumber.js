@@ -17,11 +17,12 @@ import axios from "axios";
 import { AuthContext } from "../context/AuthContext";
 import { BASE_URL } from "../constants/config";
 import { useNavigation } from "@react-navigation/core";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const PhoneNumber = () => {
   const [selectedCountry, setSelectedCountry] = useState({cca2: "TN", callingCode: "216"});
   const [otp, setOTP] = useState("");
-  const { phoneNumber, setPhoneNumber, setIsFirstAuth, setCallingCode } = useContext(AuthContext);
+  const { phoneNumber, setPhoneNumber, setCallingCode, setAuthStatus} = useContext(AuthContext);
   const navigation = useNavigation();
 
   const onSelectCountry = (country) => {
@@ -43,6 +44,11 @@ const PhoneNumber = () => {
   };
 
   const sendPhoneNumber = () => {
+    if(phoneNumber === ""){
+      Alert.alert("Please enter a phone number !");
+      return;
+    }
+
     const postData = {
       phoneNumber: selectedCountry.callingCode + "" + phoneNumber,
     };
@@ -54,7 +60,7 @@ const PhoneNumber = () => {
       .then((response) => {
         console.log(response.data);
         setOTP(response.data.code);
-        setIsFirstAuth(!response.data.existingUser ? true : false);
+        setAuthStatus(response.data.existingUser);
       })
       .catch((error) => {
         if (error.response && error.response.status === 400) {
@@ -66,6 +72,12 @@ const PhoneNumber = () => {
 
     navigation.navigate("OTPVerification", { data: phoneNumber });
   };
+
+  const handleExistingUser = async (existingUser) => {
+    const existingUserString = JSON.stringify(existingUser);
+    console.log("gexistingUserStrin", existingUserString)
+    await AsyncStorage.setItem("existingUser", existingUserString);
+  }
 
   return (
     <SafeAreaView style={styles.area}>

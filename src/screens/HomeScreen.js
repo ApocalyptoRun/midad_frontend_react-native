@@ -1,4 +1,5 @@
 import {
+  ActivityIndicator,
   PermissionsAndroid,
   Platform,
   Pressable,
@@ -15,7 +16,7 @@ import React, {
 } from "react";
 import {AuthContext} from "../context/AuthContext";
 import {SafeAreaView} from "react-native-safe-area-context";
-import {COLORS, SIZES, FONTS} from "../constants/themes";
+import {COLORS} from "../constants/themes";
 import {useNavigation} from "@react-navigation/native";
 import axios from "axios";
 import {BASE_URL, createConfig} from "../constants/config";
@@ -28,6 +29,7 @@ const HomeScreen = () => {
   const navigation = useNavigation();
   const [matchedContacts, setMatchedContacts] = useState([]);
   const [phoneContacts, setPhoneContacts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const requestContactsPermission = async () => {
@@ -96,6 +98,7 @@ const HomeScreen = () => {
         );
         if (response.status === 200) {
           setMatchedContacts(response.data);
+          setLoading(false);
         }
       } catch (error) {
         console.error(`Error comparing contacts with backend: ${error}`);
@@ -145,6 +148,14 @@ const HomeScreen = () => {
       },
     });
   }, []);
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size={"large"} color={COLORS.cornflowerBlue} />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={{margin: 12}}>
