@@ -23,19 +23,19 @@ const OTPVerification = () => {
   const {login} = useContext(AuthContext);
   const otpInputRef = useRef(null);
 
-  useEffect(() => {
-    getHash()
-      .then(hash => {console.log(hash)})
-      .catch(console.log);
+  // useEffect(() => {
+  //   getHash()
+  //     .then(hash => {console.log(hash)})
+  //     .catch(console.log);
 
-    startOtpListener(message => {
-      Keyboard.dismiss();
-      const match = /(\d{4})/g.exec(message);
-      const otp = match ? match[1] : null;
-      setOtp(otp);
-      setOtpValue(otp);
-    });
-  }, []);
+  //   startOtpListener(message => {
+  //     Keyboard.dismiss();
+  //     const match = /(\d{4})/g.exec(message);
+  //     const otp = match ? match[1] : null;
+  //     setOtp(otp);
+  //     setOtpValue(otp);
+  //   });
+  // }, []);
 
   const sendOTP = () => {
     const postData = {
@@ -102,9 +102,9 @@ const OTPVerification = () => {
             numberOfDigits={4}
             focusColor="#4E73DE"
             focusStickBlinkingDuration={400}
-            onFilled={() => sendOTP()}
-            // onFilled={(text) => setOtp(text)}
-            // onTextChange={(text) => setOtp(text)}
+            // onFilled={() => sendOTP()}
+            onFilled={(text) => setOtp(text)}
+            onTextChange={(text) => setOtp(text)}
             theme={{
               pinCodeContainerStyle: {
                 backgroundColor: COLORS.white,
@@ -130,7 +130,7 @@ const OTPVerification = () => {
           </TouchableOpacity>
         </TouchableOpacity>
 
-        {/* <Button title="OKEY" style={{ marginVertical: 25 }} onPress={sendOTP} /> */}
+        <Button title="OKEY" style={{ marginVertical: 25 }} onPress={sendOTP} />
       </View>
     </SafeAreaView>
   );

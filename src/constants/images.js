@@ -7,6 +7,7 @@ const work = require("../assets/work.png");
 const loupe = require("../assets/loupe.png");
 const settings = require("../assets/settings.png");
 const profile = require("../assets/profile.png");
+const chatImgBack = require("../assets/backImgchat.jpg")
 
 export default {
   secureLogin,
@@ -18,4 +19,5 @@ export default {
   loupe,
   settings,
   profile,
+  chatImgBack
 };

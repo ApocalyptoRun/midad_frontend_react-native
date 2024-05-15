@@ -3,6 +3,7 @@ import React, {createContext, useEffect, useState} from "react";
 import {BASE_URL, createConfig} from "../constants/config";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
+import {io} from "socket.io-client";
 
 export const AuthContext = createContext();
 
@@ -14,6 +15,8 @@ export const AuthProvider = ({children}) => {
   const [callingCode, setCallingCode] = useState("216");
   const [isFirstAuth, setIsFirstAuth] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const socket = io(BASE_URL);
 
   const login = async () => {
     setIsLoading(true);
@@ -88,8 +91,8 @@ export const AuthProvider = ({children}) => {
   const checkExistingUser = async () => {
     try {
       const existingUser = await AsyncStorage.getItem("existingUser");
-      setIsFirstAuth(!existingUser);
-      setIsAuthenticated(existingUser === "true");
+        setIsFirstAuth(!existingUser);
+        setIsAuthenticated(existingUser === "true");
     } catch (error) {
       console.error("Error reading authentication status:", error);
     }
@@ -100,7 +103,7 @@ export const AuthProvider = ({children}) => {
     await AsyncStorage.setItem("isAuthenticated", status.toString());
     if (status) {
       console.log("status", status);
-      await AsyncStorage.setItem("existingUser", JSON.stringify(status));
+      await AsyncStorage.setItem("existingUser", status.toString());
     } else {
       await AsyncStorage.removeItem("existingUser");
     }
@@ -124,6 +127,7 @@ export const AuthProvider = ({children}) => {
         isFirstAuth,
         setIsFirstAuth,
         setAuthStatus,
+        socket,
       }}>
       {children}
     </AuthContext.Provider>

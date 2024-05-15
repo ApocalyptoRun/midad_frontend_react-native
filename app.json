@@ -1,4 +1,7 @@
 {
   "name": "midad_frontend",
-  "displayName": "midad_frontend"
+  "displayName": "midad_frontend",
+  "androidStatusBar": {
+    "backgroundColor": "#000000"
+  }
 }

@@ -8,12 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import React, {
-  useEffect,
-  useContext,
-  useLayoutEffect,
-  useState,
-} from "react";
+import React, {useEffect, useContext, useLayoutEffect, useState} from "react";
 import {AuthContext} from "../context/AuthContext";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {COLORS} from "../constants/themes";
@@ -25,12 +20,53 @@ import Contacts from "react-native-contacts";
 import Ionicons from "react-native-vector-icons/Ionicons";
 
 const HomeScreen = () => {
-  const {userToken, logout} = useContext(AuthContext);
+  const {userToken, logout, socket} = useContext(AuthContext);
   const navigation = useNavigation();
   const [matchedContacts, setMatchedContacts] = useState([]);
   const [phoneContacts, setPhoneContacts] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerTitle: "",
+      headerLeft: () => (
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+          }}>
+          <TouchableOpacity>
+            <Ionicons
+              name="menu"
+              size={24}
+              color="white"
+              style={{marginLeft: 12}}
+            />
+          </TouchableOpacity>
+          <Text
+            style={{
+              fontSize: 16,
+              fontWeight: "bold",
+              color: "white",
+              marginLeft: 12,
+            }}>
+            Midad
+          </Text>
+        </View>
+      ),
+      headerRight: () => (
+        <View
+          style={{flexDirection: "row", alignItems: "center", marginRight: 12}}>
+          <Ionicons name="search" size={24} color="white" />
+        </View>
+      ),
+      headerStyle: {
+        backgroundColor: "#4E73DE",
+      },
+    });
+  }, []);
+  
   useEffect(() => {
     const requestContactsPermission = async () => {
       if (Platform.OS === "android") {
@@ -84,74 +120,42 @@ const HomeScreen = () => {
   }, []);
 
   useEffect(() => {
-    const fetchMatchedContacts = async () => {
-      const postData = {
-        phoneContacts: phoneContacts,
-      };
+    if (socket) {
+      socket.on("userChange", data => {
+          fetchMatchedContacts();
+      })
+    }
 
-      const config = createConfig(userToken);
-      try {
-        const response = await axios.post(
-          `${BASE_URL}/user/compareContacts`,
-          postData,
-          config,
-        );
-        if (response.status === 200) {
-          setMatchedContacts(response.data);
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error(`Error comparing contacts with backend: ${error}`);
-      }
-    };
-
-    fetchMatchedContacts();
+    if(phoneContacts){
+      fetchMatchedContacts();
+    }
   }, [phoneContacts]);
 
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerTitle: "",
-      headerLeft: () => (
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-          }}>
-          <TouchableOpacity>
-            <Ionicons
-              name="menu"
-              size={24}
-              color="white"
-              style={{marginLeft: 12}}
-            />
-          </TouchableOpacity>
-          <Text
-            style={{
-              fontSize: 16,
-              fontWeight: "bold",
-              color: "white",
-              marginLeft: 12,
-            }}>
-            Midad
-          </Text>
-        </View>
-      ),
-      headerRight: () => (
-        <View
-          style={{flexDirection: "row", alignItems: "center", marginRight: 12}}>
-          <Ionicons name="search" size={24} color="white" />
-        </View>
-      ),
-      headerStyle: {
-        backgroundColor: "#4E73DE",
-      },
-    });
-  }, []);
+  const fetchMatchedContacts = async () => {
+    const postData = {
+      phoneContacts: phoneContacts,
+    };
+
+    const config = createConfig(userToken);
+    try {
+      const response = await axios.post(
+        `${BASE_URL}/user/compareContacts`,
+        postData,
+        config,
+      );
+      if (response.status === 200) {
+        setMatchedContacts(response.data);
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error(`Error comparing contacts with backend: ${error}`);
+    }
+  };
+
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <View style={{flex: 1, justifyContent: "center", alignItems: "center"}}>
         <ActivityIndicator size={"large"} color={COLORS.cornflowerBlue} />
       </View>
     );

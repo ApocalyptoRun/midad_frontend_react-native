@@ -28,35 +28,36 @@ import EmojiSelector from "react-native-emoji-selector";
 import {COLORS} from "../constants/themes";
 import {AuthContext} from "../context/AuthContext";
 import {BASE_URL, createConfig} from "../constants/config";
-import {io} from "socket.io-client";
 import axios from "axios";
 import {launchImageLibrary} from "react-native-image-picker";
 import DocumentPicker from "react-native-document-picker";
 import RNFetchBlob from "rn-fetch-blob";
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 const ChatScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const {currentChat} = route.params;
   const currentChatId = currentChat._id;
-  const {userToken, userId} = useContext(AuthContext);
+  const {userToken, userId, socket} = useContext(AuthContext);
   const [messages, setMessages] = useState([]);
   const [selectedImage, setSelectedImage] = useState("");
   const [msg, setMsg] = useState("");
   const [arrivalMessage, setArrivalMessage] = useState("");
   const config = createConfig(userToken);
-  const socket = useRef(null);
   const [showEmojiSelector, setShowEmojiSelector] = useState(false);
   const [audio, setAudio] = useState();
   const [audioUri, setAudioUri] = useState("");
   const [recording, setRecording] = useState(null);
   const [appState, setAppState] = useState(AppState.currentState);
   const [filePath, setFilePath] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const scrollViewRef = useRef(null);
 
   useEffect(() => {
     fecthMessages();
     setupSocket();
-  }, [currentChatId]);
+  }, [currentChatId, socket]);
 
   useEffect(() => {
     arrivalMessage && setMessages(prev => [...prev, arrivalMessage]);
@@ -159,7 +160,7 @@ const ChatScreen = () => {
         const responseData = await response.json();
         console.log(responseData);
 
-        socket.current.emit("send-msg", responseData);
+        socket.emit("send-msg", responseData);
 
         const msgs = [...messages];
         msgs.push(responseData);
@@ -210,11 +211,9 @@ const ChatScreen = () => {
 
   const setupSocket = () => {
     if (userId) {
-      socket.current = io(BASE_URL);
-      socket.current.emit("add-user", userId);
+      socket.emit("add-user", userId);
 
-      socket.current.on("msg-receive", data => {
-        console.log(appState);
+      socket.on("msg-receive", data => {
         setArrivalMessage(data);
       });
     }
@@ -277,11 +276,47 @@ const ChatScreen = () => {
     actualDownload();
   };
 
+  const handleContentSizeChange = () => {
+    if (scrollViewRef.current) {
+      scrollViewRef.current.scrollToEnd({ animated: true });
+    }
+  };
+
+  const emitTypingEvent = (isTyping) => {
+    socket.emit("typing", {
+      senderId: userId,
+      recipientId: currentChatId,
+      isTyping: isTyping,
+    });
+  };
+
+  const handleTextChange = (text) => {
+    setMsg(text); // Update message state
+    if (text.length > 0 && !isTyping) {
+      setIsTyping(true); // User starts typing
+      emitTypingEvent(true); // Emit typing event
+    } else if (text.length === 0 && isTyping) {
+      setIsTyping(false); // User stops typing
+      emitTypingEvent(false); // Emit typing event
+    }
+  };
+
+
   return (
     <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}>
-      <ScrollView>
+    style={{ flex: 1, backgroundColor: "white" }}
+    >
+      <StatusBar
+        barStyle="light-content"
+        hidden={false}
+        backgroundColor="#4E73DE"
+        translucent={false}
+      />
+      <ScrollView 
+        ref={scrollViewRef}
+        onContentSizeChange={handleContentSizeChange} 
+        contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end' }} 
+      >
         {messages.map((item, index) => {
           const isCurrentUser = item?.senderId?._id === userId;
 
@@ -419,7 +454,8 @@ const ChatScreen = () => {
 
         <TextInput
           value={msg}
-          onChangeText={text => setMsg(text)}
+          // onChangeText={text => setMsg(text)}
+          onChangeText={text => handleTextChange(text)}
           style={{
             flex: 1,
             height: 40,
@@ -491,13 +527,8 @@ export default ChatScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#fff",
+    
   },
-  inner: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderTopColor: "#dddddd",
-  },
+
 });
