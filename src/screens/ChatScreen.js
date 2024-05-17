@@ -1,4 +1,5 @@
 import {
+  ActivityIndicator,
   AppState,
   Image,
   KeyboardAvoidingView,
@@ -32,7 +33,8 @@ import axios from "axios";
 import {launchImageLibrary} from "react-native-image-picker";
 import DocumentPicker from "react-native-document-picker";
 import RNFetchBlob from "rn-fetch-blob";
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import LoadingDots from "react-native-loading-dots";
+import PushNotification from "react-native-push-notification";
 
 const ChatScreen = () => {
   const navigation = useNavigation();
@@ -52,6 +54,7 @@ const ChatScreen = () => {
   const [appState, setAppState] = useState(AppState.currentState);
   const [filePath, setFilePath] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [isSendVisible, setIsSendVisible] = useState(true);
   const scrollViewRef = useRef(null);
 
   useEffect(() => {
@@ -89,15 +92,29 @@ const ChatScreen = () => {
               }}
               source={{uri: currentChat?.profilePhoto}}
             />
-            <Text
-              style={{
-                marginLeft: 5,
-                fontSize: 15,
-                fontWeight: "bold",
-                color: "white",
-              }}>
-              {currentChat?.firstName}
-            </Text>
+            <View>
+              <Text
+                style={{
+                  marginLeft: 5,
+                  fontSize: 15,
+                  fontWeight: "bold",
+                  color: "white",
+                }}>
+                {currentChat?.firstName}
+              </Text>
+
+              {isTyping && (
+                <View style={{flexDirection: "row", marginLeft: 4}}>
+                  <LoadingDots
+                    dots={3}
+                    size={5}
+                    bounceHeight={5}
+                    colors={["#fffffa", "#fffffa", "#fffffa"]}
+                  />
+                  <Text style={{color: "white", marginLeft: 2}}>Typing</Text>
+                </View>
+              )}
+            </View>
           </View>
         </View>
       ),
@@ -118,7 +135,7 @@ const ChatScreen = () => {
         </View>
       ),
     });
-  }, []);
+  }, [isTyping]);
 
   const handleSend = async (
     messageType,
@@ -167,6 +184,8 @@ const ChatScreen = () => {
         setMessages(msgs);
 
         setMsg("");
+        setIsSendVisible(false);
+        emitTypingEvent(false);
         setSelectedImage("");
       }
     } catch (error) {
@@ -215,6 +234,22 @@ const ChatScreen = () => {
 
       socket.on("msg-receive", data => {
         setArrivalMessage(data);
+
+        if (data.message && data.senderId.firstName) {
+          const notificationTime = new Date(Date.now() + 10 * 1000);
+
+          PushNotification.localNotification({
+            channelId: "your-channel-id",
+            id: 0,
+            title: `${data.senderId.firstName}`,
+            message: `${data.message}`,
+            date: notificationTime,
+          });
+        }
+      });
+
+      socket.on("typing", data => {
+        setIsTyping(data.isTyping);
       });
     }
   };
@@ -278,45 +313,43 @@ const ChatScreen = () => {
 
   const handleContentSizeChange = () => {
     if (scrollViewRef.current) {
-      scrollViewRef.current.scrollToEnd({ animated: true });
+      scrollViewRef.current.scrollToEnd({animated: true});
     }
   };
 
-  const emitTypingEvent = (isTyping) => {
-    socket.emit("typing", {
-      senderId: userId,
-      recipientId: currentChatId,
-      isTyping: isTyping,
-    });
-  };
-
-  const handleTextChange = (text) => {
-    setMsg(text); // Update message state
-    if (text.length > 0 && !isTyping) {
-      setIsTyping(true); // User starts typing
-      emitTypingEvent(true); // Emit typing event
-    } else if (text.length === 0 && isTyping) {
-      setIsTyping(false); // User stops typing
-      emitTypingEvent(false); // Emit typing event
+  const emitTypingEvent = isTyping => {
+    if (userId && currentChatId) {
+      socket.emit("typing", {
+        senderId: userId,
+        recipientId: currentChatId,
+        isTyping: isTyping,
+      });
     }
   };
 
+  const handleTextChange = text => {
+    setMsg(text);
+    if (text.length > 0) {
+      setIsSendVisible(true);
+      emitTypingEvent(true);
+    } else if (text.length === 0) {
+      setIsSendVisible(false);
+      emitTypingEvent(false);
+    }
+  };
 
   return (
-    <KeyboardAvoidingView
-    style={{ flex: 1, backgroundColor: "white" }}
-    >
+    <KeyboardAvoidingView style={{flex: 1, backgroundColor: "white"}}>
       <StatusBar
         barStyle="light-content"
         hidden={false}
         backgroundColor="#4E73DE"
         translucent={false}
       />
-      <ScrollView 
+      <ScrollView
         ref={scrollViewRef}
-        onContentSizeChange={handleContentSizeChange} 
-        contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end' }} 
-      >
+        onContentSizeChange={handleContentSizeChange}
+        contentContainerStyle={{flexGrow: 1, justifyContent: "flex-end"}}>
         {messages.map((item, index) => {
           const isCurrentUser = item?.senderId?._id === userId;
 
@@ -454,7 +487,6 @@ const ChatScreen = () => {
 
         <TextInput
           value={msg}
-          // onChangeText={text => setMsg(text)}
           onChangeText={text => handleTextChange(text)}
           style={{
             flex: 1,
@@ -476,38 +508,45 @@ const ChatScreen = () => {
             gap: 7,
             marginHorizontal: 8,
           }}>
-          <Entypo
-            onPress={pickImageAndSend}
-            name="camera"
-            size={24}
-            color="gray"
-          />
 
-          <Ionicons
-            onPress={pickDocumentAndSend}
-            name="document-attach-outline"
-            size={24}
-            color="gray"
-          />
+          {!isSendVisible && (
+            <Entypo
+              onPress={pickImageAndSend}
+              name="camera"
+              size={24}
+              color="gray"
+            />
+          )}
 
-          <TouchableOpacity
-          // onPressIn={handlePressIn}
-          // onPressOut={handlePressOut}
+          {!isSendVisible && (
+            <Ionicons
+              onPress={pickDocumentAndSend}
+              name="document-attach-outline"
+              size={24}
+              color="gray"
+            />
+          )}
+
+          {/* <TouchableOpacity
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
           >
-            <View /* style={{transform: [{scale: audio ? 2 : 1}]}} */>
+            <View  style={{transform: [{scale: audio ? 2 : 1}]}} >
               <Feather
-                // name={audio ? "stop-circle" : "mic"}
+                name={audio ? "stop-circle" : "mic"}
                 name="mic"
                 size={24}
                 color="gray"
               />
             </View>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
-        <TouchableOpacity onPress={() => handleSend("text")}>
-          <Ionicons name="send-sharp" size={24} color="#4E73DE" />
-        </TouchableOpacity>
+        {isSendVisible && (
+          <TouchableOpacity onPress={() => handleSend("text")}>
+            <Ionicons name="send-sharp" size={24} color="#4E73DE" />
+          </TouchableOpacity>
+        )}
       </View>
 
       {showEmojiSelector && (
@@ -528,7 +567,5 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    
   },
-
 });

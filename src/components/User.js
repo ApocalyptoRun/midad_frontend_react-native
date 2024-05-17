@@ -2,7 +2,7 @@ import { View, Text, TouchableOpacity, Image } from "react-native";
 import React from "react";
 
 const User = ({ item, navigation }) => {
-  console.log(item)
+  // console.log(item)
   return (
     <TouchableOpacity
       onPress={() =>
