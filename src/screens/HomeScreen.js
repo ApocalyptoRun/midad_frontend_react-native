@@ -12,7 +12,7 @@ import React, {useEffect, useContext, useLayoutEffect, useState} from "react";
 import {AuthContext} from "../context/AuthContext";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {COLORS} from "../constants/themes";
-import {useNavigation} from "@react-navigation/native";
+import {DrawerActions, useNavigation} from "@react-navigation/native";
 import axios from "axios";
 import {BASE_URL, createConfig} from "../constants/config";
 import User from "../components/User";
@@ -20,12 +20,13 @@ import Contacts from "react-native-contacts";
 import Ionicons from "react-native-vector-icons/Ionicons";
 
 const HomeScreen = () => {
-  const {userToken, logout, socket} = useContext(AuthContext);
+  const {userToken, userId, socket} = useContext(AuthContext);
   const navigation = useNavigation();
   const [matchedContacts, setMatchedContacts] = useState([]);
   const [phoneContacts, setPhoneContacts] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+  const [onlineUsers, setOnlineUsers] = useState([]);
+
   useLayoutEffect(() => {
     navigation.setOptions({
       headerTitle: "",
@@ -36,7 +37,8 @@ const HomeScreen = () => {
             alignItems: "center",
             justifyContent: "center",
           }}>
-          <TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation.dispatch(DrawerActions.toggleDrawer())}>
             <Ionicons
               name="menu"
               size={24}
@@ -65,8 +67,8 @@ const HomeScreen = () => {
         backgroundColor: "#4E73DE",
       },
     });
-  }, []);
-  
+  }, [navigation]);
+
   useEffect(() => {
     const requestContactsPermission = async () => {
       if (Platform.OS === "android") {
@@ -120,13 +122,15 @@ const HomeScreen = () => {
   }, []);
 
   useEffect(() => {
-    if (socket) {
-      socket.on("userChange", data => {
-          fetchMatchedContacts();
-      })
-    }
+    socket.emit("add-user", userId);
 
-    if(phoneContacts){
+    socket.on("update-online-users", data => {
+      if (data) {
+       setOnlineUsers(data)
+      }
+    });
+
+    if (phoneContacts) {
       fetchMatchedContacts();
     }
   }, [phoneContacts]);
@@ -152,7 +156,6 @@ const HomeScreen = () => {
     }
   };
 
-
   if (loading) {
     return (
       <View style={{flex: 1, justifyContent: "center", alignItems: "center"}}>
@@ -171,12 +174,12 @@ const HomeScreen = () => {
       />
 
       {matchedContacts.map((item, index) => (
-        <User key={index} item={item} navigation={navigation} />
+        <User key={index} item={item} navigation={navigation} onlineUsers={onlineUsers}/>
       ))}
 
-      <Pressable style={{marginTop: 15, alignItems: "center"}} onPress={logout}>
+      {/* <Pressable style={{marginTop: 15, alignItems: "center"}} onPress={logout}>
         <Text style={{color: COLORS.black}}>logout</Text>
-      </Pressable>
+      </Pressable> */}
     </SafeAreaView>
   );
 };

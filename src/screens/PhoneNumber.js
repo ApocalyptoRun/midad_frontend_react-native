@@ -1,6 +1,6 @@
-import React, { useState, useContext } from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { COLORS, SIZES, FONTS } from "../constants/themes";
+import React, {useState, useContext} from "react";
+import {SafeAreaView} from "react-native-safe-area-context";
+import {COLORS, SIZES, FONTS} from "../constants/themes";
 import {
   Alert,
   Image,
@@ -14,18 +14,21 @@ import images from "../constants/images";
 import Button from "../components/Button";
 import CountryPicker from "react-native-country-picker-modal";
 import axios from "axios";
-import { AuthContext } from "../context/AuthContext";
-import { BASE_URL } from "../constants/config";
-import { useNavigation } from "@react-navigation/core";
+import {AuthContext} from "../context/AuthContext";
+import {BASE_URL} from "../constants/config";
+import {useNavigation} from "@react-navigation/core";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const PhoneNumber = () => {
-  const [selectedCountry, setSelectedCountry] = useState({cca2: "TN", callingCode: "216"});
+  const [selectedCountry, setSelectedCountry] = useState({
+    cca2: "TN",
+    callingCode: "216",
+  });
   const [otp, setOTP] = useState("");
-  const { phoneNumber, setPhoneNumber, setCallingCode, setAuthStatus} = useContext(AuthContext);
+  const {phoneNumber, setPhoneNumber, setCallingCode, setAuthStatus} = useContext(AuthContext);
   const navigation = useNavigation();
 
-  const onSelectCountry = (country) => {
+  const onSelectCountry = country => {
     setSelectedCountry(country);
   };
 
@@ -39,12 +42,12 @@ const PhoneNumber = () => {
           onPress: () => console.log("OK Pressed"),
         },
       ],
-      { cancelable: false }
+      {cancelable: false},
     );
   };
 
   const sendPhoneNumber = () => {
-    if(phoneNumber === ""){
+    if (phoneNumber === "") {
       Alert.alert("Please enter a phone number !");
       return;
     }
@@ -57,12 +60,12 @@ const PhoneNumber = () => {
 
     axios
       .post(`${BASE_URL}/auth/sendOTP`, postData)
-      .then((response) => {
+      .then(response => {
         console.log(response.data);
         setOTP(response.data.code);
         setAuthStatus(response.data.existingUser);
       })
-      .catch((error) => {
+      .catch(error => {
         if (error.response && error.response.status === 400) {
           console.log(error.response.data);
         } else {
@@ -70,14 +73,16 @@ const PhoneNumber = () => {
         }
       });
 
-    navigation.navigate("OTPVerification", { data: phoneNumber });
+    navigation.navigate("OTPVerification", {
+      data: selectedCountry.callingCode + "" + phoneNumber,
+    });
   };
 
-  const handleExistingUser = async (existingUser) => {
+  const handleExistingUser = async existingUser => {
     const existingUserString = JSON.stringify(existingUser);
-    console.log("gexistingUserStrin", existingUserString)
+    console.log("gexistingUserStrin", existingUserString);
     await AsyncStorage.setItem("existingUser", existingUserString);
-  }
+  };
 
   return (
     <SafeAreaView style={styles.area}>
@@ -90,20 +95,18 @@ const PhoneNumber = () => {
       </View>
 
       <View>
-        <Text style={{ ...FONTS.h2, textAlign: "center" }}>
+        <Text style={{...FONTS.h2, textAlign: "center"}}>
           Enter Your Phone Number
         </Text>
-        <Text style={{ ...FONTS.h4, textAlign: "center" }}>
+        <Text style={{...FONTS.h4, textAlign: "center"}}>
           We will send you a verification code
         </Text>
 
         <View style={styles.inputContainer}>
           <TouchableOpacity
             style={styles.selectedFlagTunisie}
-            onPress={() => {}}
-          >
-
-            <View style={{ justifyContent: "center", marginLeft: 3 }}>
+            onPress={() => {}}>
+            <View style={{justifyContent: "center", marginLeft: 3}}>
               <CountryPicker
                 countryCode={selectedCountry.cca2}
                 withFilter
@@ -115,8 +118,8 @@ const PhoneNumber = () => {
               />
             </View>
 
-            <View style={{ justifyContent: "center" }}>
-              <Text style={{ color: COLORS.black, fontSize: 13 }}>
+            <View style={{justifyContent: "center"}}>
+              <Text style={{color: COLORS.black, fontSize: 13}}>
                 +{selectedCountry.callingCode}
               </Text>
             </View>
@@ -127,7 +130,7 @@ const PhoneNumber = () => {
             placeholderTextColor={COLORS.gray4}
             selectionColor={COLORS.black}
             keyboardType="numeric"
-            onChangeText={(text) => {
+            onChangeText={text => {
               setPhoneNumber(text);
               setCallingCode(selectedCountry.callingCode);
             }}
@@ -138,7 +141,7 @@ const PhoneNumber = () => {
         <Button
           title="VERIFY"
           onPress={sendPhoneNumber}
-          style={{ marginLeft: 16 }}
+          style={{marginLeft: 16}}
         />
       </View>
     </SafeAreaView>

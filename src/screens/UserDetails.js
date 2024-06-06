@@ -29,11 +29,13 @@ const UserDetails = ({navigation}) => {
     try {
       const formData = new FormData();
       formData.append("firstName", firstName);
-      formData.append("file", {
-        uri: image,
-        name: "image.jpg",
-        type: "image/jpeg",
-      });
+      if (image) {
+        formData.append("file", {
+          uri: image,
+          name: "image.jpg",
+          type: "image/jpeg",
+        });
+      }
 
       const response = await fetch(`${BASE_URL}/user/updateProfile`, {
         method: "PUT",
@@ -57,7 +59,7 @@ const UserDetails = ({navigation}) => {
 
       if (response.ok) {
         // setIsFirstAuth(!isFirstAuth);
-        navigation.navigate("Home");
+        navigation.navigate("HomeScreen");
       } else {
         console.log(`Error: ${responseData}`);
       }

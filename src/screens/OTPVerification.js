@@ -17,11 +17,14 @@ import axios from "axios";
 import {AuthContext} from "../context/AuthContext";
 import {BASE_URL} from "../constants/config";
 import {getHash, startOtpListener} from "react-native-otp-verify";
+import { useRoute } from "@react-navigation/core";
+import PhoneNumber from "./PhoneNumber";
 
 const OTPVerification = () => {
   const [otp, setOtp] = useState("");
   const {login} = useContext(AuthContext);
   const otpInputRef = useRef(null);
+  const route = useRoute();
 
   // useEffect(() => {
   //   getHash()
@@ -30,16 +33,23 @@ const OTPVerification = () => {
 
   //   startOtpListener(message => {
   //     Keyboard.dismiss();
-  //     const match = /(\d{4})/g.exec(message);
+  //     const match = /(\d{6})/g.exec(message);
   //     const otp = match ? match[1] : null;
   //     setOtp(otp);
   //     setOtpValue(otp);
   //   });
+
   // }, []);
 
   const sendOTP = () => {
+    if (!otp) {
+      Alert.alert("Error", "OTP cannot be empty");
+      return;
+    }
+
     const postData = {
       OTP: otp,
+      phoneNumber: route.params.data
     };
 
     axios
@@ -99,12 +109,12 @@ const OTPVerification = () => {
           }}>
           <OtpInput
             ref={otpInputRef}
-            numberOfDigits={4}
+            numberOfDigits={6}
             focusColor="#4E73DE"
             focusStickBlinkingDuration={400}
             // onFilled={() => sendOTP()}
-            onFilled={(text) => setOtp(text)}
             onTextChange={(text) => setOtp(text)}
+            // onFilled={(text) => setOtp(text)}
             theme={{
               pinCodeContainerStyle: {
                 backgroundColor: COLORS.white,
@@ -115,6 +125,9 @@ const OTPVerification = () => {
               pinCodeTextStyle: {
                 color: COLORS.black,
               },
+              pinCodeContainerStyle: {
+                marginLeft: 4
+              }
             }}
           />
         </View>

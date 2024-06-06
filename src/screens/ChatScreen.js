@@ -24,6 +24,7 @@ import {useNavigation, useRoute} from "@react-navigation/core";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import Feather from "react-native-vector-icons/Feather";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
+import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import Entypo from "react-native-vector-icons/Entypo";
 import EmojiSelector from "react-native-emoji-selector";
 import {COLORS} from "../constants/themes";
@@ -54,12 +55,14 @@ const ChatScreen = () => {
   const [appState, setAppState] = useState(AppState.currentState);
   const [filePath, setFilePath] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [isSendVisible, setIsSendVisible] = useState(true);
+  const [isSendVisible, setIsSendVisible] = useState(false);
   const scrollViewRef = useRef(null);
 
   useEffect(() => {
     fecthMessages();
-    setupSocket();
+    if (socket) {
+      setupSocket();
+    }
   }, [currentChatId, socket]);
 
   useEffect(() => {
@@ -90,7 +93,11 @@ const ChatScreen = () => {
                 borderRadius: 50,
                 resizeMode: "cover",
               }}
-              source={{uri: currentChat?.profilePhoto}}
+              source={{
+                uri: currentChat.profilePhoto
+                  ? currentChat.profilePhoto
+                  : "https://letsenhance.io/static/73136da51c245e80edc6ccfe44888a99/1015f/MainBefore.jpg",
+              }}
             />
             <View>
               <Text
@@ -120,13 +127,7 @@ const ChatScreen = () => {
       ),
       headerRight: () => (
         <View style={{marginRight: 16, flexDirection: "row", gap: 12}}>
-          <TouchableOpacity
-            onPress={() =>
-              navigation.navigate("VideoCall", {
-                from: userId,
-                to: currentChatId,
-              })
-            }>
+          <TouchableOpacity>
             <FontAwesome name="video-camera" size={24} color="white" />
           </TouchableOpacity>
           <TouchableOpacity>
@@ -143,6 +144,8 @@ const ChatScreen = () => {
     documentName,
     documentType,
   ) => {
+    setMsg("");
+
     try {
       const formData = new FormData();
       formData.append("recepientId", currentChatId);
@@ -178,6 +181,10 @@ const ChatScreen = () => {
         console.log(responseData);
 
         socket.emit("send-msg", responseData);
+        socket.emit("lastMessage", {
+          ...responseData,
+          recepientId: currentChatId,
+        });
 
         const msgs = [...messages];
         msgs.push(responseData);
@@ -229,10 +236,16 @@ const ChatScreen = () => {
   };
 
   const setupSocket = () => {
-    if (userId) {
+
+    if (!socket || !socket.connected) {
+      console.log("Socket not connected!");
+      return;
+    }
+
       socket.emit("add-user", userId);
 
       socket.on("msg-receive", data => {
+        console.log("msg receive");
         setArrivalMessage(data);
 
         if (data.message && data.senderId.firstName) {
@@ -249,9 +262,9 @@ const ChatScreen = () => {
       });
 
       socket.on("typing", data => {
+        console.log("typing");
         setIsTyping(data.isTyping);
       });
-    }
   };
 
   const handleEmojiPress = () => {
@@ -401,7 +414,16 @@ const ChatScreen = () => {
                   },
                 ]}>
                 <Text style={textStyle}> {item?.message} </Text>
-                <Text style={timeStyle}> {formatTime(item.timeStamp)} </Text>
+                <View style={{flexDirection: "row"}}>
+                  <Text style={timeStyle}> {formatTime(item.timeStamp)} </Text>
+                  {isCurrentUser && (
+                    <MaterialIcons
+                      name={item.seen ? "download-done" : "done"}
+                      size={18}
+                      color="white"
+                    />
+                  )}
+                </View>
               </Pressable>
             );
           }
@@ -508,7 +530,6 @@ const ChatScreen = () => {
             gap: 7,
             marginHorizontal: 8,
           }}>
-
           {!isSendVisible && (
             <Entypo
               onPress={pickImageAndSend}
@@ -519,22 +540,22 @@ const ChatScreen = () => {
           )}
 
           {!isSendVisible && (
-            <Ionicons
+            <MaterialIcons
               onPress={pickDocumentAndSend}
-              name="document-attach-outline"
+              name="attach-file"
               size={24}
               color="gray"
             />
           )}
 
           {/* <TouchableOpacity
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
+          // onPressIn={handlePressIn}
+          // onPressOut={handlePressOut}
           >
-            <View  style={{transform: [{scale: audio ? 2 : 1}]}} >
+            <View style={{transform: [{scale: audio ? 2 : 1}]}}>
               <Feather
                 name={audio ? "stop-circle" : "mic"}
-                name="mic"
+                // name="mic"
                 size={24}
                 color="gray"
               />

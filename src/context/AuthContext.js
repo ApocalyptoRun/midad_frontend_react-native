@@ -15,8 +15,11 @@ export const AuthProvider = ({children}) => {
   const [callingCode, setCallingCode] = useState("216");
   const [isFirstAuth, setIsFirstAuth] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  const socket = io(BASE_URL);
+  
+  const socket = io("http://192.168.2.5:3031");
+  // const socket = io("https://api.midad.tn/socket");
+  // const socket = socketIOClient({path: "/socket.io"});
+  // const socket = io("http://41.231.46.254:3031");  //Ahmed forwarding port
 
   const login = async () => {
     setIsLoading(true);
@@ -48,6 +51,10 @@ export const AuthProvider = ({children}) => {
   };
 
   useEffect(() => {
+    socket.on("connect", () => {
+      console.log("Connected to Socket.IO server");
+    });
+
     const isLoggedIn = async () => {
       try {
         setIsLoading(true);
@@ -78,6 +85,10 @@ export const AuthProvider = ({children}) => {
           );
           if (response) {
             setUserId(response.data.id);
+
+            if(socket){
+              socket.emit("add-user", response.data.id);
+            }
           }
         } catch (error) {
           console.log(`Error authenticating token ${error}`);
@@ -91,8 +102,8 @@ export const AuthProvider = ({children}) => {
   const checkExistingUser = async () => {
     try {
       const existingUser = await AsyncStorage.getItem("existingUser");
-        setIsFirstAuth(!existingUser);
-        setIsAuthenticated(existingUser === "true");
+      setIsFirstAuth(!existingUser);
+      setIsAuthenticated(existingUser === "true");
     } catch (error) {
       console.error("Error reading authentication status:", error);
     }
