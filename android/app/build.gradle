@@ -2,9 +2,6 @@ apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
-project.ext.react = [
-  bundleInRelease: true,
-]
 
 /**
  * This is the configuration block to customize your React Native Android app.
@@ -83,8 +80,8 @@ android {
         applicationId "com.midad_frontend"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode 5
+        versionName "1.0.5"
         ndkVersion '22.1.7171670'
     }
     signingConfigs {

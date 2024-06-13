@@ -16,7 +16,7 @@ export const AuthProvider = ({children}) => {
   const [isFirstAuth, setIsFirstAuth] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   
-  const socket = io("http://192.168.2.5:3031");
+  const socket = io("http://192.168.2.1:3031");
   // const socket = io("https://api.midad.tn/socket");
   // const socket = socketIOClient({path: "/socket.io"});
   // const socket = io("http://41.231.46.254:3031");  //Ahmed forwarding port

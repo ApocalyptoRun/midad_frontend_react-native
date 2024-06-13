@@ -19,6 +19,7 @@ import User from "../components/User";
 import Contacts from "react-native-contacts";
 import Ionicons from "react-native-vector-icons/Ionicons";
 
+
 const HomeScreen = () => {
   const {userToken, userId, socket} = useContext(AuthContext);
   const navigation = useNavigation();
@@ -26,6 +27,7 @@ const HomeScreen = () => {
   const [phoneContacts, setPhoneContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [onlineUsers, setOnlineUsers] = useState([]);
+
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -177,9 +179,9 @@ const HomeScreen = () => {
         <User key={index} item={item} navigation={navigation} onlineUsers={onlineUsers}/>
       ))}
 
-      {/* <Pressable style={{marginTop: 15, alignItems: "center"}} onPress={logout}>
-        <Text style={{color: COLORS.black}}>logout</Text>
-      </Pressable> */}
+
+   
+
     </SafeAreaView>
   );
 };

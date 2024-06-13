@@ -40,7 +40,7 @@ import PushNotification from "react-native-push-notification";
 const ChatScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const {currentChat} = route.params;
+  const {currentChat, isUserOnline} = route.params;
   const currentChatId = currentChat._id;
   const {userToken, userId, socket} = useContext(AuthContext);
   const [messages, setMessages] = useState([]);
@@ -64,6 +64,32 @@ const ChatScreen = () => {
       setupSocket();
     }
   }, [currentChatId, socket]);
+
+  useEffect(() => {
+    const lastMessageIsFromOtherUser =
+      messages.length && messages[messages.length - 1].senderId._id !== userId;
+
+    if (lastMessageIsFromOtherUser) {
+      socket.emit("mark-as-seen", {config, recepientId: currentChatId});
+    }
+
+    socket.on("messagesSeen", () => {
+        setMessages(prev => {
+          const updatedMessages = prev.map(message => {
+            if (!message.seen) {
+              return {
+                ...message,
+                seen: true,
+              };
+            }
+            return message;
+          });
+          return updatedMessages;
+        });
+
+        socket.emit("lastMessageSeenHome", {userId, recepientId: currentChatId});
+    });
+  }, [socket, messages, currentChatId, userId]);
 
   useEffect(() => {
     arrivalMessage && setMessages(prev => [...prev, arrivalMessage]);
@@ -110,7 +136,7 @@ const ChatScreen = () => {
                 {currentChat?.firstName}
               </Text>
 
-              {isTyping && (
+              {isTyping ? (
                 <View style={{flexDirection: "row", marginLeft: 4}}>
                   <LoadingDots
                     dots={3}
@@ -120,7 +146,11 @@ const ChatScreen = () => {
                   />
                   <Text style={{color: "white", marginLeft: 2}}>Typing</Text>
                 </View>
+              ) : (
+                isUserOnline && <Text style={{marginLeft:4}} hidden={isTyping}>Online</Text>
               )}
+
+             
             </View>
           </View>
         </View>
@@ -236,35 +266,34 @@ const ChatScreen = () => {
   };
 
   const setupSocket = () => {
-
     if (!socket || !socket.connected) {
       console.log("Socket not connected!");
       return;
     }
 
-      socket.emit("add-user", userId);
+    socket.emit("add-user", userId);
 
-      socket.on("msg-receive", data => {
-        console.log("msg receive");
-        setArrivalMessage(data);
+    socket.on("msg-receive", data => {
+      // console.log("msg receive");
+      setArrivalMessage(data);
 
-        if (data.message && data.senderId.firstName) {
-          const notificationTime = new Date(Date.now() + 10 * 1000);
+      if (data.message && data.senderId.firstName) {
+        const notificationTime = new Date(Date.now() + 10 * 1000);
 
-          PushNotification.localNotification({
-            channelId: "your-channel-id",
-            id: 0,
-            title: `${data.senderId.firstName}`,
-            message: `${data.message}`,
-            date: notificationTime,
-          });
-        }
-      });
+        PushNotification.localNotification({
+          channelId: "your-channel-id",
+          id: 0,
+          title: `${data.senderId.firstName}`,
+          message: `${data.message}`,
+          date: notificationTime,
+        });
+      }
+    });
 
-      socket.on("typing", data => {
-        console.log("typing");
-        setIsTyping(data.isTyping);
-      });
+    socket.on("typing", data => {
+      // console.log("typing");
+      setIsTyping(data.isTyping);
+    });
   };
 
   const handleEmojiPress = () => {
@@ -352,7 +381,7 @@ const ChatScreen = () => {
   };
 
   return (
-    <KeyboardAvoidingView style={{flex: 1, backgroundColor: "white"}}>
+    <KeyboardAvoidingView style={{flex: 1}}>
       <StatusBar
         barStyle="light-content"
         hidden={false}
@@ -373,7 +402,7 @@ const ChatScreen = () => {
               }
             : {
                 alignSelf: "flex-start",
-                backgroundColor: COLORS.gray4,
+                backgroundColor: 'lightgray',
               };
 
           const textStyle = isCurrentUser
@@ -384,6 +413,7 @@ const ChatScreen = () => {
               }
             : {
                 fontSize: 13,
+                color: "black",
                 textAlign: "left",
               };
 
@@ -397,6 +427,7 @@ const ChatScreen = () => {
             : {
                 textAlign: "left",
                 fontSize: 9,
+                color: "black",
                 marginTop: 5,
               };
 
@@ -418,7 +449,7 @@ const ChatScreen = () => {
                   <Text style={timeStyle}> {formatTime(item.timeStamp)} </Text>
                   {isCurrentUser && (
                     <MaterialIcons
-                      name={item.seen ? "download-done" : "done"}
+                      name={item.seen ? "done-all" : "done"}
                       size={18}
                       color="white"
                     />

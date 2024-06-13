@@ -19,6 +19,18 @@ const User = ({item, navigation, onlineUsers}) => {
         }
       }
     });
+
+    socket.on("lastMessageSeenHome", data => {
+      if (item?._id === data.recepientId || item?._id === data.userId) {
+        console.log(lastMessage)
+        if (data) {
+          setLastMessage(prev => ({
+            ...prev,
+            seen: true,
+          }));
+        }
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -55,7 +67,9 @@ const User = ({item, navigation, onlineUsers}) => {
 
   return (
     <TouchableOpacity
-      onPress={() => navigation.navigate("ChatScreen", {currentChat: item})}
+      onPress={() =>
+        navigation.navigate("ChatScreen", {currentChat: item, isUserOnline})
+      }
       style={{flexDirection: "row", alignItems: "center", marginVertical: 10}}>
       <View>
         <Image
@@ -68,7 +82,7 @@ const User = ({item, navigation, onlineUsers}) => {
           source={{
             uri: item.profilePhoto
               ? item.profilePhoto
-              : "https://letsenhance.io/static/73136da51c245e80edc6ccfe44888a99/1015f/MainBefore.jpg",
+              : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTm0FeDa-ksAws16qgMe4Oaq5w6wOM0FeyJHf3phOCUZ3361lOWOOLdClla4BlyDDpaXes&usqp=CAU",
           }}
         />
         {isUserOnline && (
@@ -81,6 +95,8 @@ const User = ({item, navigation, onlineUsers}) => {
               width: 15,
               height: 15,
               borderRadius: 8,
+              borderWidth: 2,
+              borderColor: "white",
               zIndex: 1,
             }}
           />
@@ -93,22 +109,26 @@ const User = ({item, navigation, onlineUsers}) => {
             {item?.firstName}
           </Text>
 
-          {lastMessage && (
-            <View style={{flexDirection: "row"}}>
+          <View style={{flexDirection: "row"}}>
+            {lastMessage &&( 
               <MaterialIcons
-                name="done"
+                name={lastMessage.seen ? "done-all" : "done"}
                 size={18}
                 color={COLORS.cornflowerBlue}
               />
+            )}
+            {lastMessage && (
               <Text style={{color: "gray", marginLeft: 5}}>
                 {formatTime(lastMessage?.timeStamp)}
               </Text>
-            </View>
-          )}
+            )}
+          </View>
         </View>
 
         {lastMessage && lastMessage.messageType === "text" && (
-          <Text numberOfLines={1} style={{marginTop: 4, color: "grey"}}>
+          <Text
+            numberOfLines={1}
+            style={{marginTop: 4, color: "grey", marginRight: 23}}>
             {lastMessage.message}
           </Text>
         )}
@@ -127,7 +147,11 @@ const User = ({item, navigation, onlineUsers}) => {
 
         {lastMessage && lastMessage.messageType === "document" && (
           <View style={{flexDirection: "row", marginTop: 2}}>
-            <MaterialIcons name="attach-file" size={22} color="gray" />
+            <MaterialIcons
+              name="attach-file"
+              size={22}
+              color={COLORS.cornflowerBlue}
+            />
             <Text style={{color: "gray"}}>
               {lastMessage.imageUrl.split("/").pop()}
             </Text>

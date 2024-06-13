@@ -9,6 +9,7 @@ const settings = require("../assets/settings.png");
 const profile = require("../assets/profile.png");
 const chatImgBack = require("../assets/backImgchat.jpg")
 const default_photo = require("../assets/default_photo.jpg")
+const bg_image = require("../assets/bg_image.jpg")
 
 export default {
   secureLogin,
@@ -21,5 +22,6 @@ export default {
   settings,
   profile,
   chatImgBack,
-  default_photo
+  default_photo,
+  bg_image
 };

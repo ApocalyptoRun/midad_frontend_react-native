@@ -18,31 +18,6 @@ const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
 
 const AppStack = () => {
-  // const {isFirstAuth, checkExistingUser} = useContext(AuthContext);
-  // const [loading, setLoading] = useState(true);
-
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     try {
-  //       await checkExistingUser();
-  //     } catch (error) {
-  //       console.error("Error checking existing user:", error);
-  //     }
-  //     setLoading(false);
-  //   };
-
-  //   fetchData();
-  // }, [checkExistingUser]);
-
-  // if (loading) {
-  //   return (
-  //     <View style={{flex: 1, justifyContent: "center", alignItems: "center"}}>
-  //       <ActivityIndicator size={"large"} color={COLORS.cornflowerBlue} />
-  //     </View>
-  //   );
-  // }
-
-
   return (
       <Drawer.Navigator initialRouteName="Home" 
       drawerContent={props => <CustomDrawer {...props} />}
@@ -58,6 +33,7 @@ const AppStack = () => {
             <Ionicons name="home-outline" size={22} color={color} />
           )
         }}/>
+        
         <Drawer.Screen name="Profile" component={ProfileScreen} options={{
             drawerIcon: ({color}) => (
               <Ionicons name="person-outline" size={22} color={color} />
